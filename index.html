@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f7" id="themeColor">
+  <title>Zeitplan-Rechner Ultimate</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Zeitplan">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-180.png">
+
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --card-soft: #fafafa;
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --border: #d2d2d7;
+      --blue: #007aff;
+      --blue-soft: #e8f4ff;
+      --orange: #ff9500;
+      --orange-soft: #fff6dc;
+      --green: #34c759;
+      --green-soft: #edf9ef;
+      --red: #ff3b30;
+      --gray: #8e8e93;
+      --shadow: 0 2px 10px rgba(0,0,0,.08);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    body.dark {
+      color-scheme: dark;
+      --bg: #111214;
+      --card: #1c1d20;
+      --card-soft: #24262a;
+      --text: #f5f5f7;
+      --muted: #a8a8ad;
+      --border: #3a3b40;
+      --blue-soft: #102a43;
+      --orange-soft: #3b2b0a;
+      --green-soft: #12311d;
+      --shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background .2s ease, color .2s ease;
+    }
+
+    .app {
+      width: min(100%, 620px);
+      margin: 0 auto;
+      padding: 18px 16px calc(104px + var(--safe-bottom));
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 4px 0 18px;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .theme-btn {
+      width: auto;
+      min-width: 44px;
+      padding: 9px 11px;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .compat-warning {
+      display: none;
+      background: #fff3cd;
+      color: #5c4500;
+      border: 1px solid #f0cf70;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(127,127,127,.14);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-weight: 800;
+      font-size: 17px;
+      margin-bottom: 8px;
+    }
+
+    .label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .label:first-child { margin-top: 0; }
+
+    input, textarea, select, button { font: inherit; }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 11px 12px;
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(0,122,255,.14);
+    }
+
+    textarea { min-height: 58px; resize: vertical; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .row > * { flex: 1; }
+
+    button {
+      border: 0;
+      border-radius: 11px;
+      padding: 11px 12px;
+      cursor: pointer;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 750;
+      touch-action: manipulation;
+    }
+
+    button:hover { filter: brightness(.96); }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: .4; cursor: default; transform: none; }
+
+    .orange { background: var(--orange); }
+    .green { background: var(--green); }
+    .red { background: var(--red); }
+    .gray { background: var(--gray); }
+    .secondary {
+      background: var(--card-soft);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .small { padding: 9px 10px; font-size: 14px; }
+
+    .template-row {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .template-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .stage {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .stage-title-wrap {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stage-title {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .stage-summary {
+      color: var(--muted);
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stage-controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stage-controls button {
+      width: auto;
+      min-width: 38px;
+      padding: 8px 9px;
+      font-size: 14px;
+    }
+
+    .stage-body { margin-top: 10px; }
+    .stage.collapsed .stage-body { display: none; }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 10px 11px;
+      background: var(--card-soft);
+      border-radius: 11px;
+      border: 1px solid var(--border);
+    }
+
+    .toggle-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 auto;
+      margin: 0;
+    }
+
+    .toggle-row label { cursor: pointer; font-weight: 650; }
+
+    .actions { display: grid; gap: 10px; }
+
+    .sticky-actions {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: min(100%, 620px);
+      padding: 10px 16px calc(10px + var(--safe-bottom));
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(127,127,127,.2);
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .result-card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .result-card.visible { display: block; }
+
+    .result-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+    }
+
+    .result-header h2 {
+      margin: 0 0 6px;
+      font-size: 23px;
+    }
+
+    .result-meta { color: var(--muted); font-size: 14px; }
+
+    .latest-start {
+      background: var(--blue-soft);
+      border: 2px solid var(--blue);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 12px 0 14px;
+      text-align: center;
+    }
+
+    .latest-start .label-big {
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-size: 12px;
+      font-weight: 850;
+      color: var(--muted);
+    }
+
+    .latest-start .big {
+      font-size: clamp(30px, 8vw, 42px);
+      font-weight: 900;
+      margin-top: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .marker {
+      background: var(--orange-soft);
+      border-left: 5px solid var(--orange);
+      border-radius: 11px;
+      padding: 12px 13px;
+      margin: 0 0 14px;
+      font-weight: 750;
+    }
+
+    .notes-result {
+      background: var(--card-soft);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 11px 12px;
+      margin: 0 0 14px;
+      white-space: pre-wrap;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 8px;
+      margin: 12px 0 15px;
+    }
+
+    .summary-box {
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: var(--card-soft);
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .summary-box span { display: block; color: var(--muted); font-size: 12px; }
+    .summary-box strong { display: block; margin-top: 3px; font-size: 16px; }
+
+    .timeline { display: grid; gap: 9px; }
+
+    .timeline-item {
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 11px 12px;
+      background: var(--card-soft);
+    }
+
+    .timeline-item.buffer {
+      background: var(--orange-soft);
+      border-left: 5px solid var(--orange);
+    }
+
+    .timeline-item.goal {
+      background: var(--green-soft);
+      border-left: 5px solid var(--green);
+    }
+
+    .timeline-title { font-weight: 800; margin-bottom: 4px; }
+    .timeline-time { font-variant-numeric: tabular-nums; font-size: 15px; }
+    .timeline-sub { margin-top: 4px; font-size: 13px; color: var(--muted); }
+
+    .summary {
+      margin-top: 14px;
+      background: var(--blue-soft);
+      border-radius: 11px;
+      padding: 11px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .countdown {
+      margin-top: 10px;
+      background: var(--green-soft);
+      border-radius: 11px;
+      padding: 11px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.4; margin-top: 8px; }
+    .muted { color: var(--muted); }
+    .hidden { display: none !important; }
+
+    @media (max-width: 560px) {
+      .app { padding-left: 12px; padding-right: 12px; }
+      .grid-2, .template-row { grid-template-columns: 1fr; }
+      .row { flex-direction: column; }
+      h1 { font-size: 23px; }
+      .compat-warning {
+      display: none;
+      background: #fff3cd;
+      color: #5c4500;
+      border: 1px solid #f0cf70;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .card { border-radius: 14px; padding: 14px; }
+      .stage-head { align-items: flex-start; flex-direction: column; }
+      .stage-controls { width: 100%; justify-content: stretch; }
+      .stage-controls button { flex: 1; min-width: 44px; min-height: 42px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      button, input, select { min-height: 44px; }
+      .sticky-actions { grid-template-columns: 1fr 1fr; padding-left: 12px; padding-right: 12px; }
+    }
+
+    @media print {
+      :root {
+        --bg: #fff;
+        --card: #fff;
+        --card-soft: #fff;
+        --text: #000;
+        --muted: #444;
+        --border: #bbb;
+        --blue-soft: #eef6ff;
+        --orange-soft: #fff7df;
+        --green-soft: #eef9ef;
+      }
+      body { background: #fff !important; color: #000 !important; }
+      .app { width: 100%; max-width: none; padding: 0; }
+      .no-print, .card, .sticky-actions, .topbar { display: none !important; }
+      .result-card {
+        display: block !important;
+        box-shadow: none;
+        border: 0;
+        padding: 0;
+        margin: 0;
+      }
+      .latest-start {
+        border: 2px solid #000;
+        background: #fff !important;
+        padding: 10px;
+      }
+      .latest-start .big { font-size: 28px; }
+      .summary-grid { margin: 8px 0 12px; }
+      .summary-box, .timeline-item, .marker, .notes-result, .summary {
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .timeline-item, .latest-start, .summary, .summary-box, .marker, .notes-result { break-inside: avoid; }
+      .timeline { gap: 6px; }
+      .timeline-item { padding: 8px 10px; }
+      .countdown { display: none !important; }
+
+      /* Kompakte Ein-Seiten-Druckansicht für den Intervall-Rechner */
+      body.print-interval { font-size: 9pt; }
+      body.print-interval .app { font-size: 9pt; }
+      body.print-interval #intervallErgebnis {
+        font-size: 8.5pt;
+        line-height: 1.08;
+      }
+      body.print-interval #intervallErgebnis h2 {
+        font-size: 15pt;
+        margin: 0 0 2mm 0;
+      }
+      body.print-interval .interval-summary {
+        font-size: 8.5pt;
+        line-height: 1.15;
+        margin: 0 0 2mm 0;
+        padding: 2mm 2.5mm;
+      }
+      body.print-interval .interval-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8pt;
+        line-height: 1;
+      }
+      body.print-interval .interval-table th,
+      body.print-interval .interval-table td {
+        padding: 1.05mm 1.8mm;
+        border-bottom: 0.2mm solid #bbb;
+      }
+      body.print-interval .interval-table th {
+        font-size: 8pt;
+      }
+      body.print-interval .interval-table tr {
+        break-inside: avoid;
+      }
+      body.print-interval .reference-row td {
+        font-weight: 800;
+      }
+      @page { size: A4; margin: 10mm; }
+      body.print-interval { --print-page-margin: 7mm; }
+      @page { size: A4 portrait; }
+    }
+
+    .mode-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+    .mode-tab { background:var(--card); color:var(--text); border:1px solid var(--border); }
+    .mode-tab.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .mode-panel.hidden-panel { display:none; }
+    .interval-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .interval-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .reference-row { background:var(--blue-soft); border:2px solid var(--blue); font-weight:700; }
+    .interval-table { width:100%; border-collapse:collapse; margin-top:12px; }
+    .interval-table th,.interval-table td { padding:10px 8px; border-bottom:1px solid var(--border); text-align:left; }
+    .interval-table th:first-child,.interval-table td:first-child { text-align:center; width:90px; }
+    .interval-summary { padding:12px; border-radius:10px; background:var(--card-soft); margin-bottom:10px; }
+    @media (max-width:520px) { .interval-grid { grid-template-columns:1fr 1fr 1fr; gap:6px; } .interval-grid-2 { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar no-print">
+      <h1>🕐 Zeitplan-Rechner Ultimate</h1>
+      <button type="button" class="theme-btn" id="themeBtn" title="Dunkelmodus umschalten">🌙</button>
+    </div>
+
+    <div class="mode-tabs no-print">
+      <button type="button" class="mode-tab active" id="tabZeitplan">Zeitplan</button>
+      <button type="button" class="mode-tab" id="tabIntervall">Intervall-Rechner</button>
+    </div>
+
+    <div id="zeitplanPanel" class="mode-panel">
+    <section class="card no-print">
+      <label class="label" for="plantitel">📄 Plan-Titel</label>
+      <input type="text" id="plantitel" value="Mein Zeitplan">
+
+      <div class="template-row">
+        <select id="vorlagenSelect" aria-label="Vorlage laden">
+          <option value="">📂 Vorlage laden</option>
+        </select>
+        <button type="button" class="orange" id="saveTemplateBtn">💾 Vorlage speichern</button>
+      </div>
+
+      <div class="template-actions">
+        <button type="button" class="secondary small" id="renameTemplateBtn">✏️ Umbenennen</button>
+        <button type="button" class="secondary small" id="duplicateTemplateBtn">⧉ Duplizieren</button>
+        <button type="button" class="secondary small" id="exportTemplatesBtn">⬇️ Exportieren</button>
+        <button type="button" class="secondary small" id="importTemplatesBtn">⬆️ Importieren</button>
+        <button type="button" class="red small" id="deleteTemplateBtn" style="grid-column:1/-1;">🗑️ Vorlage löschen</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+      <div class="hint">Vorlagen speichern Titel, Etappen, Dauer, Gesamtpuffer, Notiz und Merker – nicht Datum oder Zielzeit.</div>
+
+      <div class="grid-2">
+        <div>
+          <label class="label" for="zieldatum">📅 Zieldatum</label>
+          <input type="date" id="zieldatum">
+        </div>
+        <div>
+          <label class="label" for="zielzeit">⏰ Zielzeit</label>
+          <input type="time" id="zielzeit">
+        </div>
+      </div>
+
+      <label class="label" for="plannotiz">📝 Notiz zum Plan</label>
+      <textarea id="plannotiz" placeholder="Optional, z. B. Parkplatz oft voll, Teleobjektiv einpacken …"></textarea>
+    </section>
+
+    <section class="card no-print">
+      <div class="section-title">Etappen</div>
+      <div id="etappenContainer"></div>
+      <button type="button" class="orange" id="addStageBtn">➕ Etappe hinzufügen</button>
+
+      <label class="label" for="pufferFinal">⚡ Gesamtpuffer (Min)</label>
+      <input type="number" id="pufferFinal" value="10" min="0" step="1" inputmode="numeric">
+      <div class="hint">Der Gesamtpuffer liegt direkt vor der Zielzeit und verschiebt den gesamten Start entsprechend nach vorne.</div>
+
+      <div class="toggle-row">
+        <input type="checkbox" id="markerEnabled" checked>
+        <label for="markerEnabled">Merker im Ergebnis anzeigen</label>
+      </div>
+      <label class="label" for="markerText">Merkertext</label>
+      <input type="text" id="markerText" value="Spätestens {ZEIT} Uhr abfahrbereit" placeholder="z. B. Spätestens {ZEIT} Uhr abfahrbereit">
+      <div class="hint">Mit <strong>{ZEIT}</strong> wird automatisch die berechnete Startzeit eingesetzt.</div>
+    </section>
+
+    <section class="card no-print actions">
+      <button type="button" id="calcBtn">📊 Berechnen</button>
+      <button type="button" class="green" id="printBtn" style="display:none;">🖨️ Drucken / Als PDF speichern</button>
+      <div class="hint">Änderungen werden automatisch neu berechnet, sobald Datum und Zielzeit vollständig sind.</div>
+    </section>
+
+    <section id="ergebnis" class="result-card"></section>
+    </div>
+
+    <div id="intervallPanel" class="mode-panel hidden-panel">
+      <section class="card no-print">
+        <div class="section-title">Intervall-Rechner</div>
+        <div class="hint">Berechnet feste Zeitintervalle vor und nach einem frei gewählten Referenzzeitpunkt.</div>
+
+        <div class="interval-grid-2">
+          <div><label class="label" for="intervallDatum">📅 Referenzdatum</label><input type="date" id="intervallDatum"></div>
+          <div><label class="label" for="intervallZeit">⏱️ Referenzzeit</label><input type="time" id="intervallZeit" step="1"></div>
+        </div>
+        <button type="button" class="secondary small" id="takeTargetBtn">↙ Zielzeit aus Zeitplan übernehmen</button>
+
+        <label class="label">Intervall</label>
+        <div class="interval-grid">
+          <div><label for="intHours">Stunden</label><input type="number" id="intHours" min="0" value="0" inputmode="numeric"></div>
+          <div><label for="intMinutes">Minuten</label><input type="number" id="intMinutes" min="0" max="59" value="2" inputmode="numeric"></div>
+          <div><label for="intSeconds">Sekunden</label><input type="number" id="intSeconds" min="0" max="59" value="30" inputmode="numeric"></div>
+        </div>
+
+        <div class="interval-grid-2">
+          <div><label class="label" for="countBefore">Intervalle davor</label><input type="number" id="countBefore" min="0" max="500" value="15" inputmode="numeric"></div>
+          <div><label class="label" for="countAfter">Intervalle danach</label><input type="number" id="countAfter" min="0" max="500" value="15" inputmode="numeric"></div>
+        </div>
+        <div class="actions"><button type="button" id="intervalCalcBtn">📊 Intervalle berechnen</button><button type="button" class="green" id="intervalPrintBtn" style="display:none;">🖨️ Drucken / Als PDF speichern</button></div>
+        <div id="intervalStatus" class="hint" role="status" aria-live="polite"></div>
+      </section>
+      <section id="intervallErgebnis" class="result-card"></section>
+    </div>
+  </main>
+
+  <div class="sticky-actions no-print" id="zeitplanSticky">
+    <button type="button" id="stickyCalcBtn">📊 Berechnen</button>
+    <button type="button" class="green" id="stickyPrintBtn">🖨️ PDF / Drucken</button>
+  </div>
+
+  <script>
+    // iPhone/Dateien-Kompatibilität: einige lokale HTML-Viewer stellen
+    // localStorage oder Web-Crypto nicht zuverlässig zur Verfügung.
+    function safeStorageGet(key) {
+      try { return window.localStorage ? window.localStorage.getItem(key) : null; }
+      catch (e) { return null; }
+    }
+    function safeStorageSet(key, value) {
+      try { if (window.localStorage) window.localStorage.setItem(key, value); return true; }
+      catch (e) { return false; }
+    }
+
+    const STORAGE_KEY = 'zeitplanVorlagenV3';
+    const LEGACY_KEY = 'zeitplanVorlagenV2';
+    const THEME_KEY = 'zeitplanTheme';
+    let stages = [];
+    let templates = loadTemplates();
+    let lastCalculated = null;
+    let autoTimer = null;
+
+    const el = id => document.getElementById(id);
+
+    window.onerror = function(message) {
+      var box = document.getElementById('compatWarning');
+      if (box) {
+        box.style.display = 'block';
+        box.textContent = 'Technischer Hinweis: Eine Funktion konnte nicht gestartet werden. Bitte diese v6-Datei erneut aus Dateien öffnen. (' + message + ')';
+      }
+      return false;
+    };
+
+    function loadTemplates() {
+      try {
+        const current = JSON.parse(safeStorageGet(STORAGE_KEY));
+        if (current && typeof current === 'object') return current;
+        const legacy = JSON.parse(safeStorageGet(LEGACY_KEY));
+        if (legacy && typeof legacy === 'object') {
+          safeStorageSet(STORAGE_KEY, JSON.stringify(legacy));
+          return legacy;
+        }
+      } catch {}
+      return {};
+    }
+
+    function saveTemplates() {
+      safeStorageSet(STORAGE_KEY, JSON.stringify(templates));
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function todayLocalISO() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function newId() {
+      return 'id-' + Date.now() + '-' + Math.floor(Math.random() * 1000000000);
+    }
+
+    function createStage(description = 'Neue Etappe', duration = 10, insertAt = null) {
+      const item = { id: newId(), description, duration, collapsed: false };
+      if (insertAt === null) stages.push(item);
+      else stages.splice(insertAt, 0, item);
+      renderStages();
+      autoCalculate();
+    }
+
+    function renderStages() {
+      const container = el('etappenContainer');
+      container.innerHTML = '';
+
+      stages.forEach((stage, index) => {
+        const div = document.createElement('div');
+        div.className = `stage${stage.collapsed ? ' collapsed' : ''}`;
+        div.dataset.id = stage.id;
+        const duration = Math.max(0, parseInt(stage.duration || '0', 10));
+        const shortDescription = (stage.description || 'Etappe').trim() || 'Etappe';
+        div.innerHTML = `
+          <div class="stage-head">
+            <div class="stage-title-wrap">
+              <div class="stage-title">Etappe ${index + 1}</div>
+              <div class="stage-summary">${escapeHtml(shortDescription)} · ${duration} Min.</div>
+            </div>
+            <div class="stage-controls">
+              <button type="button" class="secondary" data-action="collapse" title="Ein-/ausklappen">${stage.collapsed ? '▾' : '▴'}</button>
+              <button type="button" class="secondary" data-action="duplicate" title="Etappe duplizieren">⧉</button>
+              <button type="button" class="gray" data-action="up" ${index === 0 ? 'disabled' : ''} title="Nach oben">↑</button>
+              <button type="button" class="gray" data-action="down" ${index === stages.length - 1 ? 'disabled' : ''} title="Nach unten">↓</button>
+              <button type="button" class="red" data-action="delete" title="Etappe löschen">🗑️</button>
+            </div>
+          </div>
+          <div class="stage-body">
+            <label class="label">Beschreibung</label>
+            <textarea data-field="description">${escapeHtml(stage.description)}</textarea>
+            <label class="label">Dauer (Min)</label>
+            <input type="number" data-field="duration" value="${duration}" min="0" step="1" inputmode="numeric">
+          </div>
+        `;
+
+        div.addEventListener('input', e => {
+          const item = stages.find(s => s.id === stage.id);
+          if (!item) return;
+          if (e.target.dataset.field === 'description') item.description = e.target.value;
+          if (e.target.dataset.field === 'duration') item.duration = e.target.value;
+          const summary = div.querySelector('.stage-summary');
+          const d = Math.max(0, parseInt(item.duration || '0', 10));
+          summary.textContent = `${(item.description || 'Etappe').trim() || 'Etappe'} · ${d} Min.`;
+          autoCalculate();
+        });
+
+        div.addEventListener('click', e => {
+          const action = e.target.dataset.action;
+          if (!action) return;
+          const currentIndex = stages.findIndex(s => s.id === stage.id);
+          if (currentIndex < 0) return;
+
+          if (action === 'collapse') stages[currentIndex].collapsed = !stages[currentIndex].collapsed;
+          if (action === 'duplicate') {
+            const s = stages[currentIndex];
+            stages.splice(currentIndex + 1, 0, { id: newId(), description: s.description, duration: s.duration, collapsed: false });
+          }
+          if (action === 'up' && currentIndex > 0) {
+            [stages[currentIndex - 1], stages[currentIndex]] = [stages[currentIndex], stages[currentIndex - 1]];
+          }
+          if (action === 'down' && currentIndex < stages.length - 1) {
+            [stages[currentIndex + 1], stages[currentIndex]] = [stages[currentIndex], stages[currentIndex + 1]];
+          }
+          if (action === 'delete') {
+            if (stages.length === 1) return alert('Mindestens eine Etappe muss vorhanden sein.');
+            stages.splice(currentIndex, 1);
+          }
+          renderStages();
+          autoCalculate();
+        });
+
+        container.appendChild(div);
+      });
+    }
+
+    function updateTemplateSelect(selected = '') {
+      const select = el('vorlagenSelect');
+      select.innerHTML = '<option value="">📂 Vorlage laden</option>';
+      Object.keys(templates).sort((a, b) => a.localeCompare(b, 'de')).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+      if (selected && templates[selected]) select.value = selected;
+    }
+
+    function currentTemplateData(title) {
+      return {
+        title,
+        buffer: Math.max(0, parseInt(el('pufferFinal').value || '0', 10)),
+        note: el('plannotiz').value,
+        markerEnabled: el('markerEnabled').checked,
+        markerText: el('markerText').value,
+        stages: stages.map(s => ({
+          description: s.description,
+          duration: Math.max(0, parseInt(s.duration || '0', 10))
+        }))
+      };
+    }
+
+    function saveTemplate() {
+      const title = el('plantitel').value.trim();
+      if (!title) return alert('Bitte zuerst einen Plan-Titel eingeben.');
+      if (templates[title] && !confirm(`Die Vorlage „${title}“ existiert bereits. Überschreiben?`)) return;
+      templates[title] = currentTemplateData(title);
+      saveTemplates();
+      updateTemplateSelect(title);
+      alert(`Vorlage „${title}“ wurde gespeichert.`);
+    }
+
+    function loadTemplate(name) {
+      const t = templates[name];
+      if (!t) return;
+      el('plantitel').value = t.title || name;
+      el('pufferFinal').value = Number(t.buffer) || 0;
+      el('plannotiz').value = t.note || '';
+      el('markerEnabled').checked = t.markerEnabled !== false;
+      el('markerText').value = t.markerText || 'Spätestens {ZEIT} Uhr abfahrbereit';
+      stages = (t.stages || []).map(s => ({
+        id: newId(),
+        description: s.description || 'Etappe',
+        duration: Number(s.duration) || 0,
+        collapsed: false
+      }));
+      if (!stages.length) stages = [{ id: newId(), description: 'Neue Etappe', duration: 10, collapsed: false }];
+      renderStages();
+      autoCalculate();
+    }
+
+    function deleteTemplate() {
+      const name = el('vorlagenSelect').value;
+      if (!name || !templates[name]) return alert('Bitte zuerst eine Vorlage auswählen.');
+      if (!confirm(`Vorlage „${name}“ wirklich löschen?`)) return;
+      delete templates[name];
+      saveTemplates();
+      updateTemplateSelect();
+    }
+
+    function renameTemplate() {
+      const oldName = el('vorlagenSelect').value;
+      if (!oldName || !templates[oldName]) return alert('Bitte zuerst eine Vorlage auswählen.');
+      const newName = prompt('Neuer Name der Vorlage:', oldName);
+      if (!newName) return;
+      const trimmed = newName.trim();
+      if (!trimmed || trimmed === oldName) return;
+      if (templates[trimmed] && !confirm(`„${trimmed}“ existiert bereits. Überschreiben?`)) return;
+      const data = Object.assign({}, templates[oldName], { title: trimmed });
+      delete templates[oldName];
+      templates[trimmed] = data;
+      saveTemplates();
+      updateTemplateSelect(trimmed);
+      if (el('plantitel').value.trim() === oldName) el('plantitel').value = trimmed;
+      autoCalculate();
+    }
+
+    function duplicateTemplate() {
+      const name = el('vorlagenSelect').value;
+      if (!name || !templates[name]) return alert('Bitte zuerst eine Vorlage auswählen.');
+      let copyName = `${name} – Kopie`;
+      let i = 2;
+      while (templates[copyName]) copyName = `${name} – Kopie ${i++}`;
+      const entered = prompt('Name der Kopie:', copyName);
+      if (!entered) return;
+      const newName = entered.trim();
+      if (!newName) return;
+      if (templates[newName] && !confirm(`„${newName}“ existiert bereits. Überschreiben?`)) return;
+      templates[newName] = JSON.parse(JSON.stringify(templates[name]));
+      templates[newName].title = newName;
+      saveTemplates();
+      updateTemplateSelect(newName);
+    }
+
+    function exportTemplates() {
+      const payload = {
+        format: 'Zeitplan-Rechner-Ultimate',
+        version: 3,
+        exportedAt: new Date().toISOString(),
+        templates
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Zeitplan-Vorlagen-${todayLocalISO()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function importTemplatesFromFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          const imported = parsed.templates || parsed;
+          if (!imported || typeof imported !== 'object' || Array.isArray(imported)) throw new Error();
+          const names = Object.keys(imported);
+          if (!names.length) return alert('Die Datei enthält keine Vorlagen.');
+          let added = 0;
+          names.forEach(name => {
+            let targetName = name;
+            if (templates[targetName]) {
+              let i = 2;
+              let candidate = `${name} – Import`;
+              while (templates[candidate]) candidate = `${name} – Import ${i++}`;
+              targetName = candidate;
+            }
+            templates[targetName] = { ...imported[name], title: targetName };
+            added++;
+          });
+          saveTemplates();
+          updateTemplateSelect();
+          alert(`${added} Vorlage${added === 1 ? '' : 'n'} importiert.`);
+        } catch {
+          alert('Die Datei konnte nicht als gültige Vorlagendatei gelesen werden.');
+        } finally {
+          el('importFile').value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function parseTargetDate() {
+      const dateValue = el('zieldatum').value;
+      const timeValue = el('zielzeit').value;
+      if (!dateValue || !timeValue) return null;
+      const [y, m, d] = dateValue.split('-').map(Number);
+      const [hh, mm] = timeValue.split(':').map(Number);
+      const target = new Date(y, m - 1, d, hh, mm, 0, 0);
+      return Number.isNaN(target.getTime()) ? null : target;
+    }
+
+    function addMinutes(date, minutes) { return new Date(date.getTime() + minutes * 60000); }
+
+    function sameCalendarDay(a, b) {
+      return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    function formatDate(date, withYear = true) {
+      return date.toLocaleDateString('de-DE', {
+        weekday: 'short', day: '2-digit', month: '2-digit', ...(withYear ? { year: 'numeric' } : {})
+      });
+    }
+
+    function formatDateTime(date, showDate) {
+      return showDate ? `${formatDate(date)} · ${formatTime(date)} Uhr` : `${formatTime(date)} Uhr`;
+    }
+
+    function durationText(totalMin) {
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      if (h && m) return `${h} Std. ${m} Min.`;
+      if (h) return `${h} Std.`;
+      return `${m} Min.`;
+    }
+
+    function calculate(showAlert = true, scroll = true) {
+      const target = parseTargetDate();
+      if (!target) {
+        if (showAlert) alert('Bitte Zieldatum und Zielzeit eingeben.');
+        return false;
+      }
+
+      const title = el('plantitel').value.trim() || 'Zeitplan';
+      const note = el('plannotiz').value.trim();
+      const buffer = Math.max(0, parseInt(el('pufferFinal').value || '0', 10));
+      const markerEnabled = el('markerEnabled').checked;
+      const markerText = el('markerText').value.trim();
+
+      const normalizedStages = stages.map((s, index) => ({
+        description: (s.description || '').trim() || `Etappe ${index + 1}`,
+        duration: Math.max(0, parseInt(s.duration || '0', 10))
+      }));
+
+      const stageMinutes = normalizedStages.reduce((sum, s) => sum + s.duration, 0);
+      const totalMinutes = stageMinutes + buffer;
+      const start = addMinutes(target, -totalMinutes);
+      const showDates = !sameCalendarDay(start, target);
+
+      let cursor = new Date(start);
+      const timeline = [];
+      normalizedStages.forEach((stage, index) => {
+        const end = addMinutes(cursor, stage.duration);
+        timeline.push({ type: 'stage', title: `Etappe ${index + 1}: ${stage.description}`, start: new Date(cursor), end, duration: stage.duration });
+        cursor = end;
+      });
+
+      if (buffer > 0) {
+        const end = addMinutes(cursor, buffer);
+        timeline.push({ type: 'buffer', title: 'Gesamtpuffer / Reserve', start: new Date(cursor), end, duration: buffer });
+        cursor = end;
+      }
+
+      timeline.push({ type: 'goal', title: 'Zielzeit', start: new Date(target), end: new Date(target), duration: 0 });
+
+      lastCalculated = { title, note, target, start, timeline, totalMinutes, stageMinutes, showDates, buffer, markerEnabled, markerText };
+      renderResult(lastCalculated, scroll);
+      return true;
+    }
+
+    function renderResult(data, scroll = false) {
+      const result = el('ergebnis');
+      const targetDateText = data.target.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      const marker = (data.markerText || 'Spätestens {ZEIT} Uhr abfahrbereit').split('{ZEIT}').join(formatTime(data.start));
+
+      let html = `
+        <div class="result-header">
+          <h2>${escapeHtml(data.title)}</h2>
+          <div class="result-meta">Zielzeit: ${escapeHtml(targetDateText)} · ${formatTime(data.target)} Uhr</div>
+        </div>
+
+        <div class="latest-start">
+          <div class="label-big">Spätester Start</div>
+          <div class="big">${formatDateTime(data.start, data.showDates)}</div>
+        </div>
+      `;
+
+      if (data.markerEnabled && marker) html += `<div class="marker">🔔 ${escapeHtml(marker)}</div>`;
+      if (data.note) html += `<div class="notes-result"><strong>Notiz:</strong><br>${escapeHtml(data.note)}</div>`;
+
+      html += `
+        <div class="summary-grid">
+          <div class="summary-box"><span>Etappen</span><strong>${durationText(data.stageMinutes)}</strong></div>
+          <div class="summary-box"><span>Puffer</span><strong>${durationText(data.buffer)}</strong></div>
+          <div class="summary-box"><span>Gesamt</span><strong>${durationText(data.totalMinutes)}</strong></div>
+        </div>
+        <div class="timeline">
+      `;
+
+      data.timeline.forEach(item => {
+        if (item.type === 'goal') {
+          html += `
+            <div class="timeline-item goal">
+              <div class="timeline-title">🎯 ${escapeHtml(item.title)}</div>
+              <div class="timeline-time">${formatDateTime(item.start, data.showDates)}</div>
+            </div>`;
+          return;
+        }
+        const cls = item.type === 'buffer' ? 'timeline-item buffer' : 'timeline-item';
+        const icon = item.type === 'buffer' ? '⚡' : '•';
+        html += `
+          <div class="${cls}">
+            <div class="timeline-title">${icon} ${escapeHtml(item.title)}</div>
+            <div class="timeline-time">${formatDateTime(item.start, data.showDates)} → ${formatDateTime(item.end, data.showDates)}</div>
+            <div class="timeline-sub">Dauer: ${durationText(item.duration)}</div>
+          </div>`;
+      });
+
+      html += `</div><div class="summary">Gesamtdauer inkl. Puffer: ${durationText(data.totalMinutes)}</div>`;
+
+      const now = new Date();
+      if (data.start > now) {
+        const diff = Math.max(0, Math.round((data.start - now) / 60000));
+        const days = Math.floor(diff / 1440);
+        const hours = Math.floor((diff % 1440) / 60);
+        const mins = diff % 60;
+        const parts = [];
+        if (days) parts.push(`${days} T.`);
+        if (hours) parts.push(`${hours} Std.`);
+        if (mins || !parts.length) parts.push(`${mins} Min.`);
+        html += `<div class="countdown">⏰ Noch ${parts.join(' ')} bis zum spätesten Start.</div>`;
+      }
+
+      result.innerHTML = html;
+      result.classList.add('visible');
+      el('printBtn').style.display = 'block';
+      el('stickyPrintBtn').disabled = false;
+      if (scroll) safeScrollToElement(result);
+    }
+
+
+    function safeScrollToElement(node) {
+      if (!node) return;
+      try { node.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      catch (e) { try { node.scrollIntoView(true); } catch (_) {} }
+    }
+    function safeScrollTop() {
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      catch (e) { try { window.scrollTo(0, 0); } catch (_) {} }
+    }
+
+    function autoCalculate() {
+      clearTimeout(autoTimer);
+      autoTimer = setTimeout(() => calculate(false, false), 120);
+    }
+
+    function setTheme(theme) {
+      const dark = theme === 'dark';
+      document.body.classList.toggle('dark', dark);
+      el('themeBtn').textContent = dark ? '☀️' : '🌙';
+      el('themeBtn').title = dark ? 'Hellmodus einschalten' : 'Dunkelmodus einschalten';
+      el('themeColor').setAttribute('content', dark ? '#111214' : '#f5f5f7');
+      safeStorageSet(THEME_KEY, dark ? 'dark' : 'light');
+    }
+
+    function initTheme() {
+      const saved = safeStorageGet(THEME_KEY);
+      if (saved === 'dark' || saved === 'light') return setTheme(saved);
+      setTheme(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+
+    el('addStageBtn').addEventListener('click', () => createStage());
+    el('calcBtn').addEventListener('click', () => calculate(true, true));
+    el('stickyCalcBtn').addEventListener('click', () => calculate(true, true));
+    el('printBtn').addEventListener('click', () => { if (calculate(false, false)) window.print(); });
+    el('stickyPrintBtn').addEventListener('click', () => { if (calculate(true, false)) window.print(); });
+    el('saveTemplateBtn').addEventListener('click', saveTemplate);
+    el('deleteTemplateBtn').addEventListener('click', deleteTemplate);
+    el('renameTemplateBtn').addEventListener('click', renameTemplate);
+    el('duplicateTemplateBtn').addEventListener('click', duplicateTemplate);
+    el('exportTemplatesBtn').addEventListener('click', exportTemplates);
+    el('importTemplatesBtn').addEventListener('click', () => el('importFile').click());
+    el('importFile').addEventListener('change', e => { if (e.target.files && e.target.files[0]) importTemplatesFromFile(e.target.files[0]); });
+    el('vorlagenSelect').addEventListener('change', e => { if (e.target.value) loadTemplate(e.target.value); });
+    el('themeBtn').addEventListener('click', () => setTheme(document.body.classList.contains('dark') ? 'light' : 'dark'));
+
+    ['plantitel','zieldatum','zielzeit','plannotiz','pufferFinal','markerEnabled','markerText'].forEach(id => {
+      el(id).addEventListener('input', autoCalculate);
+      el(id).addEventListener('change', autoCalculate);
+    });
+
+    el('zieldatum').value = todayLocalISO();
+    el('stickyPrintBtn').disabled = true;
+    stages = [{ id: newId(), description: 'Von Zuhause → Zielort', duration: 30, collapsed: false }];
+    renderStages();
+    updateTemplateSelect();
+    initTheme();
+
+    // --- Intervall-Rechner und Bereichsumschaltung ---
+    let activeMode = 'zeitplan';
+    function setMode(mode) {
+      activeMode = mode;
+      const isPlan = mode === 'zeitplan';
+      el('zeitplanPanel').classList.toggle('hidden-panel', !isPlan);
+      el('intervallPanel').classList.toggle('hidden-panel', isPlan);
+      el('tabZeitplan').classList.toggle('active', isPlan);
+      el('tabIntervall').classList.toggle('active', !isPlan);
+      el('zeitplanSticky').style.display = isPlan ? '' : 'none';
+      safeScrollTop();
+    }
+
+    function parseIntervalReference() {
+      const d = el('intervallDatum').value, t = el('intervallZeit').value;
+      if (!d || !t) return null;
+      const [y,m,day] = d.split('-').map(Number);
+      const tp = t.split(':').map(Number);
+      return new Date(y,m-1,day,tp[0]||0,tp[1]||0,tp[2]||0,0);
+    }
+    function formatIntervalDateTime(d, showDate) {
+      const time = d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+      return showDate ? `${d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'})} · ${time}` : time;
+    }
+    function calculateIntervals(showAlert=true) {
+      const ref = parseIntervalReference();
+      if (!ref || Number.isNaN(ref.getTime())) { if(showAlert) alert('Bitte Referenzdatum und Referenzzeit eingeben.'); return false; }
+      const h=Math.max(0,parseInt(el('intHours').value||0,10));
+      const m=Math.max(0,Math.min(59,parseInt(el('intMinutes').value||0,10)));
+      const sec=Math.max(0,Math.min(59,parseInt(el('intSeconds').value||0,10)));
+      const step=h*3600+m*60+sec;
+      if(step<=0){ if(showAlert) alert('Das Intervall muss größer als 0 sein.'); return false; }
+      const before=Math.max(0,Math.min(500,parseInt(el('countBefore').value||0,10)));
+      const after=Math.max(0,Math.min(500,parseInt(el('countAfter').value||0,10)));
+      const first=new Date(ref.getTime()-before*step*1000), last=new Date(ref.getTime()+after*step*1000);
+      const showDate=!sameCalendarDay(first,last);
+      const stepText=[h?`${h} Std.`:'',m?`${m} Min.`:'',sec?`${sec} Sek.`:''].filter(Boolean).join(' ');
+      let html=`<h2>Intervall-Rechner</h2><div class="interval-summary"><strong>Referenzzeit:</strong> ${formatIntervalDateTime(ref,true)}<br><strong>Intervall:</strong> ${stepText} · <strong>${before}</strong> davor / <strong>${after}</strong> danach</div>`;
+      html+='<table class="interval-table"><thead><tr><th>Intervall</th><th>Zeitpunkt</th></tr></thead><tbody>';
+      for(let i=-before;i<=after;i++){
+        const d=new Date(ref.getTime()+i*step*1000);
+        const cls=i===0?' class="reference-row"':'';
+        const label=i>0?`+${i}`:`${i}`;
+        html+=`<tr${cls}><td>${label}</td><td>${formatIntervalDateTime(d,showDate)}${i===0?' · Referenzzeit':''}</td></tr>`;
+      }
+      html+='</tbody></table>';
+      el('intervallErgebnis').innerHTML=html;
+      el('intervalPrintBtn').style.display='block';
+      return true;
+    }
+    function takeTargetIntoInterval() {
+      const d=el('zieldatum').value, t=el('zielzeit').value;
+      if(!d||!t){ alert('Im Zeitplan ist noch keine vollständige Zielzeit eingetragen.'); return; }
+      el('intervallDatum').value=d; el('intervallZeit').value=t.length===5?t+':00':t;
+      calculateIntervals(false);
+    }
+    function showIntervalStatus(message) {
+      const status = el('intervalStatus');
+      if (!status) return;
+      status.textContent = message;
+      clearTimeout(showIntervalStatus.timer);
+      showIntervalStatus.timer = setTimeout(() => { status.textContent = ''; }, 4500);
+    }
+
+    el('tabZeitplan').addEventListener('click',()=>setMode('zeitplan'));
+    el('tabIntervall').addEventListener('click',()=>setMode('intervall'));
+    el('takeTargetBtn').addEventListener('click',takeTargetIntoInterval);
+    el('intervalCalcBtn').addEventListener('click',()=>{
+      if (calculateIntervals(true)) {
+        showIntervalStatus('Intervalle wurden berechnet.');
+        safeScrollToElement(el('intervallErgebnis'));
+      }
+    });
+    el('intervalPrintBtn').addEventListener('click',()=>{
+      if (!calculateIntervals(true)) return;
+      const rows = Math.max(0,parseInt(el('countBefore').value||0,10)) + Math.max(0,parseInt(el('countAfter').value||0,10)) + 1;
+      document.body.classList.add('print-interval');
+      const msg = rows <= 35
+        ? 'Die PDF-/Druckansicht wird jetzt erstellt. Die Intervalltabelle ist für eine A4-Seite optimiert.'
+        : 'Die PDF-/Druckansicht wird jetzt erstellt. Bei mehr als 35 Zeitpunkten können mehrere Seiten nötig sein.';
+      showIntervalStatus(msg);
+      alert(msg + '\n\nIm folgenden Dialog kannst du „Als PDF sichern“ bzw. „Als PDF speichern“ wählen.');
+      setTimeout(() => window.print(), 120);
+    });
+    window.addEventListener('afterprint',()=>document.body.classList.remove('print-interval'));
+    ['intervallDatum','intervallZeit','intHours','intMinutes','intSeconds','countBefore','countAfter'].forEach(id=>el(id).addEventListener('input',()=>calculateIntervals(false)));
+    if(!el('intervallDatum').value) el('intervallDatum').value = new Date().toISOString().slice(0,10);
+
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js').catch(function (err) {
+          console.log('Service Worker konnte nicht registriert werden:', err);
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>
