@@ -480,6 +480,62 @@
       .timeline-item { padding: 8px 10px; }
       .countdown { display: none !important; }
 
+      /* A4-Druckansicht für den Zeitplan */
+      body.print-plan #ergebnis {
+        font-size: 10pt;
+        line-height: 1.18;
+      }
+      body.print-plan #ergebnis .result-header {
+        padding-bottom: 2.5mm;
+        margin-bottom: 3mm;
+        border-bottom: 0.35mm solid #000;
+      }
+      body.print-plan #ergebnis .result-header h2 {
+        font-size: 18pt;
+        margin: 0 0 1.5mm;
+      }
+      body.print-plan #ergebnis .result-meta {
+        font-size: 9.5pt;
+        color: #000;
+      }
+      body.print-plan #ergebnis .latest-start {
+        margin: 0 0 3mm;
+        padding: 3mm;
+        border: 0.45mm solid #000;
+      }
+      body.print-plan #ergebnis .latest-start .label-big { font-size: 9pt; color: #000; }
+      body.print-plan #ergebnis .latest-start .big { font-size: 22pt; }
+      body.print-plan #ergebnis .marker,
+      body.print-plan #ergebnis .notes-result {
+        margin: 0 0 3mm;
+        padding: 2.5mm 3mm;
+        border-radius: 0;
+      }
+      body.print-plan #ergebnis .summary-grid {
+        gap: 2mm;
+        margin: 0 0 3mm;
+      }
+      body.print-plan #ergebnis .summary-box {
+        padding: 2.2mm;
+        border-radius: 0;
+      }
+      body.print-plan #ergebnis .summary-box span { font-size: 8.5pt; color: #000; }
+      body.print-plan #ergebnis .summary-box strong { font-size: 11pt; }
+      body.print-plan #ergebnis .timeline { gap: 1.8mm; }
+      body.print-plan #ergebnis .timeline-item {
+        padding: 2.4mm 3mm;
+        border-radius: 0;
+      }
+      body.print-plan #ergebnis .timeline-title { margin-bottom: 1mm; }
+      body.print-plan #ergebnis .timeline-time { font-size: 10pt; }
+      body.print-plan #ergebnis .timeline-sub { margin-top: 1mm; font-size: 8.8pt; color: #222; }
+      body.print-plan #ergebnis .summary {
+        margin-top: 3mm;
+        padding: 2.5mm;
+        border-radius: 0;
+        border: 0.3mm solid #999;
+      }
+
       /* Kompakte Ein-Seiten-Druckansicht für den Intervall-Rechner */
       body.print-interval { font-size: 11pt; }
       body.print-interval .app { font-size: 11pt; }
@@ -1162,8 +1218,16 @@
     el('addStageBtn').addEventListener('click', () => createStage());
     el('calcBtn').addEventListener('click', () => calculate(true, true));
     el('stickyCalcBtn').addEventListener('click', () => calculate(true, true));
-    el('printBtn').addEventListener('click', () => { if (calculate(false, false)) window.print(); });
-    el('stickyPrintBtn').addEventListener('click', () => { if (calculate(true, false)) window.print(); });
+    el('printBtn').addEventListener('click', () => {
+      if (!calculate(false, false)) return;
+      document.body.classList.add('print-plan');
+      setTimeout(() => window.print(), 120);
+    });
+    el('stickyPrintBtn').addEventListener('click', () => {
+      if (!calculate(true, false)) return;
+      document.body.classList.add('print-plan');
+      setTimeout(() => window.print(), 120);
+    });
     el('saveTemplateBtn').addEventListener('click', saveTemplate);
     el('deleteTemplateBtn').addEventListener('click', deleteTemplate);
     el('renameTemplateBtn').addEventListener('click', renameTemplate);
@@ -1273,7 +1337,10 @@
       alert(msg + '\n\nIm folgenden Dialog kannst du „Als PDF sichern“ bzw. „Als PDF speichern“ wählen.');
       setTimeout(() => window.print(), 120);
     });
-    window.addEventListener('afterprint',()=>document.body.classList.remove('print-interval'));
+    window.addEventListener('afterprint',()=>{
+      document.body.classList.remove('print-interval');
+      document.body.classList.remove('print-plan');
+    });
     ['intervallDatum','intervallZeit','intHours','intMinutes','intSeconds','countBefore','countAfter'].forEach(id=>el(id).addEventListener('input',()=>calculateIntervals(false)));
     if(!el('intervallDatum').value) el('intervallDatum').value = new Date().toISOString().slice(0,10);
 
