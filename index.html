@@ -535,11 +535,6 @@
       }
       body.print-interval .interval-table th:nth-child(2),
       body.print-interval .interval-table td:nth-child(2) {
-        width: 62mm;
-        text-align: center;
-      }
-      body.print-interval .interval-table th:nth-child(3),
-      body.print-interval .interval-table td:nth-child(3) {
         text-align: center;
         font-variant-numeric: tabular-nums;
         font-weight: 650;
@@ -554,7 +549,7 @@
         background: #eee !important;
       }
       body.print-interval .reference-row td:first-child::after {
-        content: "  ◀";
+        content: "";
       }
       @page { size: A4 portrait; margin: 8mm; }
     }
@@ -1230,14 +1225,13 @@
       const stepText=[h?`${h} Std.`:'',m?`${m} Min.`:'',sec?`${sec} Sek.`:''].filter(Boolean).join(' ');
       const refDateText=ref.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
       let html=`<h2>Intervallplan</h2><div class="interval-summary"><div><strong>Referenz:</strong><br>${refDateText} · ${formatIntervalDateTime(ref,false)}</div><div><strong>Intervall:</strong><br>${stepText}</div><div><strong>Umfang:</strong><br>${before} davor · ${after} danach</div></div>`;
-      html+='<table class="interval-table"><thead><tr><th>Nr.</th><th>Datum</th><th>Uhrzeit</th></tr></thead><tbody>';
+      html+='<table class="interval-table"><thead><tr><th>Nr.</th><th>Uhrzeit</th></tr></thead><tbody>';
       for(let i=-before;i<=after;i++){
         const d=new Date(ref.getTime()+i*step*1000);
         const cls=i===0?' class="reference-row"':'';
         const label=i>0?`+${i}`:`${i}`;
-        const dateText=d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
         const timeText=d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-        html+=`<tr${cls}><td>${label}</td><td>${dateText}</td><td>${timeText}${i===0?' · Referenz':''}</td></tr>`;
+        html+=`<tr${cls}><td>${label}</td><td>${timeText}${i===0?' · Referenz':''}</td></tr>`;
       }
       html+='</tbody></table>';
       el('intervallErgebnis').innerHTML=html;
