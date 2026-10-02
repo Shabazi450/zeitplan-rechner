@@ -481,45 +481,81 @@
       .countdown { display: none !important; }
 
       /* Kompakte Ein-Seiten-Druckansicht für den Intervall-Rechner */
-      body.print-interval { font-size: 9pt; }
-      body.print-interval .app { font-size: 9pt; }
+      body.print-interval { font-size: 8.5pt; }
+      body.print-interval .app { font-size: 8.5pt; }
       body.print-interval #intervallErgebnis {
-        font-size: 8.5pt;
-        line-height: 1.08;
+        font-size: 8.2pt;
+        line-height: 1.05;
       }
       body.print-interval #intervallErgebnis h2 {
-        font-size: 15pt;
-        margin: 0 0 2mm 0;
+        font-size: 16pt;
+        line-height: 1.1;
+        margin: 0 0 2.5mm 0;
+        padding-bottom: 1.8mm;
+        border-bottom: 0.35mm solid #000;
       }
       body.print-interval .interval-summary {
-        font-size: 8.5pt;
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr;
+        gap: 2mm;
+        font-size: 8.3pt;
         line-height: 1.15;
-        margin: 0 0 2mm 0;
+        margin: 0 0 2.5mm 0;
         padding: 2mm 2.5mm;
+        border: 0.25mm solid #999;
+        border-radius: 0;
+      }
+      body.print-interval .interval-summary > div {
+        min-width: 0;
       }
       body.print-interval .interval-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 8pt;
+        table-layout: fixed;
+        font-size: 8.1pt;
         line-height: 1;
+        border-top: 0.35mm solid #000;
+        border-bottom: 0.35mm solid #000;
       }
       body.print-interval .interval-table th,
       body.print-interval .interval-table td {
-        padding: 1.05mm 1.8mm;
+        padding: 1.0mm 1.8mm;
         border-bottom: 0.2mm solid #bbb;
+        vertical-align: middle;
       }
       body.print-interval .interval-table th {
         font-size: 8pt;
+        font-weight: 800;
+        border-bottom: 0.35mm solid #000;
+      }
+      body.print-interval .interval-table th:nth-child(1),
+      body.print-interval .interval-table td:nth-child(1) {
+        width: 18mm;
+        text-align: center;
+      }
+      body.print-interval .interval-table th:nth-child(2),
+      body.print-interval .interval-table td:nth-child(2) {
+        width: 62mm;
+      }
+      body.print-interval .interval-table th:nth-child(3),
+      body.print-interval .interval-table td:nth-child(3) {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        font-weight: 650;
       }
       body.print-interval .interval-table tr {
         break-inside: avoid;
       }
       body.print-interval .reference-row td {
-        font-weight: 800;
+        font-weight: 900 !important;
+        border-top: 0.45mm solid #000;
+        border-bottom: 0.45mm solid #000;
+        background: #eee !important;
       }
-      @page { size: A4; margin: 10mm; }
-      body.print-interval { --print-page-margin: 7mm; }
-      @page { size: A4 portrait; }
+      body.print-interval .reference-row td:first-child::after {
+        content: "  ◀";
+      }
+      @page { size: A4 portrait; margin: 8mm; }
     }
 
     .mode-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
@@ -1191,13 +1227,16 @@
       const first=new Date(ref.getTime()-before*step*1000), last=new Date(ref.getTime()+after*step*1000);
       const showDate=!sameCalendarDay(first,last);
       const stepText=[h?`${h} Std.`:'',m?`${m} Min.`:'',sec?`${sec} Sek.`:''].filter(Boolean).join(' ');
-      let html=`<h2>Intervall-Rechner</h2><div class="interval-summary"><strong>Referenzzeit:</strong> ${formatIntervalDateTime(ref,true)}<br><strong>Intervall:</strong> ${stepText} · <strong>${before}</strong> davor / <strong>${after}</strong> danach</div>`;
-      html+='<table class="interval-table"><thead><tr><th>Intervall</th><th>Zeitpunkt</th></tr></thead><tbody>';
+      const refDateText=ref.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+      let html=`<h2>Intervallplan</h2><div class="interval-summary"><div><strong>Referenz:</strong><br>${refDateText} · ${formatIntervalDateTime(ref,false)}</div><div><strong>Intervall:</strong><br>${stepText}</div><div><strong>Umfang:</strong><br>${before} davor · ${after} danach</div></div>`;
+      html+='<table class="interval-table"><thead><tr><th>Nr.</th><th>Datum</th><th>Uhrzeit</th></tr></thead><tbody>';
       for(let i=-before;i<=after;i++){
         const d=new Date(ref.getTime()+i*step*1000);
         const cls=i===0?' class="reference-row"':'';
         const label=i>0?`+${i}`:`${i}`;
-        html+=`<tr${cls}><td>${label}</td><td>${formatIntervalDateTime(d,showDate)}${i===0?' · Referenzzeit':''}</td></tr>`;
+        const dateText=d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+        const timeText=d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+        html+=`<tr${cls}><td>${label}</td><td>${dateText}</td><td>${timeText}${i===0?' · Referenz':''}</td></tr>`;
       }
       html+='</tbody></table>';
       el('intervallErgebnis').innerHTML=html;
